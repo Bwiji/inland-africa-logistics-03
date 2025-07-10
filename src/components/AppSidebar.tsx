@@ -1,4 +1,4 @@
-import { Home, Truck, Calendar, Settings, Users, BarChart3, Map } from "lucide-react";
+import { Home, Truck, Calendar, Settings, Users, BarChart3, Shield } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
 import {
   Sidebar,
@@ -24,14 +24,19 @@ const items = [
     icon: Truck,
   },
   {
-    title: "Trip Management", 
-    url: "/trips",
-    icon: Map,
+    title: "Fuel Management", 
+    url: "/fuel",
+    icon: Users,
   },
   {
     title: "Service Management",
     url: "/service",
     icon: Calendar,
+  },
+  {
+    title: "Compliance Management",
+    url: "/compliance",
+    icon: Shield,
   },
   {
     title: "Reports",

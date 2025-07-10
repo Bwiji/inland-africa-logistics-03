@@ -41,58 +41,58 @@ const Reports = () => {
       ]
     },
     {
-      title: "Financial Reports",
-      description: "Revenue, costs, and profitability analysis",
+      title: "Fuel Analytics",
+      description: "Fuel consumption, costs, and efficiency analysis",
       icon: DollarSign,
       reports: [
         {
-          name: "Monthly Revenue Report",
-          description: "Detailed monthly revenue breakdown with trend analysis",
+          name: "Monthly Fuel Report",
+          description: "Detailed fuel consumption and cost breakdown by truck",
           lastGenerated: "2024-06-28",
-          size: "3.1 MB",
-          type: "financial"
+          size: "2.1 MB",
+          type: "fuel"
         },
         {
-          name: "Cost Analysis Report",
-          description: "Operating costs breakdown by category and truck",
+          name: "Fuel Efficiency Report",
+          description: "Truck-by-truck fuel efficiency trends and recommendations",
           lastGenerated: "2024-06-25",
-          size: "2.7 MB",
-          type: "financial"
+          size: "1.7 MB",
+          type: "fuel"
         },
         {
-          name: "Profit & Loss Statement",
-          description: "Comprehensive P&L with profitability trends",
+          name: "Reserve Tank Report",
+          description: "Reserve tank usage patterns and refill schedules",
           lastGenerated: "2024-06-24",
-          size: "1.9 MB",
-          type: "financial"
+          size: "1.2 MB",
+          type: "fuel"
         }
       ]
     },
     {
-      title: "Operational Reports",
-      description: "Trip statistics, driver performance, and route analysis",
+      title: "Maintenance Analytics",
+      description: "Maintenance costs, schedules, and compliance tracking",
       icon: TrendingUp,
       reports: [
         {
-          name: "Trip Performance Report",
-          description: "Trip completion rates, delays, and route efficiency",
+          name: "Maintenance Cost Report",
+          description: "Monthly maintenance expenses breakdown by category",
           lastGenerated: "2024-06-28",
           size: "2.5 MB",
-          type: "operational"
+          type: "maintenance"
         },
         {
-          name: "Driver Performance Report",
-          description: "Driver statistics, compliance, and performance metrics",
+          name: "Compliance Report",
+          description: "NTSA, Insurance, and TGL license status and renewals",
           lastGenerated: "2024-06-27",
           size: "1.6 MB",
-          type: "operational"
+          type: "compliance"
         },
         {
-          name: "Route Optimization Report",
-          description: "Most profitable routes and optimization recommendations",
+          name: "Preventive Maintenance Report",
+          description: "Upcoming maintenance schedules and cost projections",
           lastGenerated: "2024-06-26",
-          size: "2.2 MB",
-          type: "operational"
+          size: "1.8 MB",
+          type: "maintenance"
         }
       ]
     }
@@ -196,10 +196,10 @@ const Reports = () => {
               <Button 
                 variant="outline" 
                 className="flex flex-col items-center gap-2 h-20"
-                onClick={() => handleGenerateReport('financial')}
+                onClick={() => handleGenerateReport('fuel')}
               >
                 <DollarSign className="w-5 h-5" />
-                <span className="text-sm">This Month P&L</span>
+                <span className="text-sm">Fuel Analysis</span>
               </Button>
               <Button 
                 variant="outline" 
@@ -212,10 +212,10 @@ const Reports = () => {
               <Button 
                 variant="outline" 
                 className="flex flex-col items-center gap-2 h-20"
-                onClick={() => handleGenerateReport('operational')}
+                onClick={() => handleGenerateReport('maintenance')}
               >
                 <TrendingUp className="w-5 h-5" />
-                <span className="text-sm">Trip Analysis</span>
+                <span className="text-sm">Maintenance Report</span>
               </Button>
               <Button 
                 variant="outline" 
@@ -243,31 +243,31 @@ const Reports = () => {
               <div className="p-4 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium">Profitability</span>
+                  <span className="text-sm font-medium">Fuel Cost Savings</span>
                 </div>
-                <p className="text-lg font-bold text-green-600">+18.5%</p>
-                <p className="text-xs text-muted-foreground">vs last month</p>
+                <p className="text-lg font-bold text-green-600">+8.5%</p>
+                <p className="text-xs text-muted-foreground">efficiency gains</p>
               </div>
               <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <FileText className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-medium">Fleet Utilization</span>
+                  <span className="text-sm font-medium">Fleet Compliance</span>
                 </div>
-                <p className="text-lg font-bold text-blue-600">87.2%</p>
-                <p className="text-xs text-muted-foreground">optimal range</p>
+                <p className="text-lg font-bold text-blue-600">94.2%</p>
+                <p className="text-xs text-muted-foreground">active licenses</p>
               </div>
               <div className="p-4 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <Calendar className="w-4 h-4 text-orange-600" />
-                  <span className="text-sm font-medium">On-Time Delivery</span>
+                  <span className="text-sm font-medium">Fuel Efficiency</span>
                 </div>
-                <p className="text-lg font-bold text-orange-600">91.4%</p>
-                <p className="text-xs text-muted-foreground">above target</p>
+                <p className="text-lg font-bold text-orange-600">8.2 km/L</p>
+                <p className="text-xs text-muted-foreground">fleet average</p>
               </div>
               <div className="p-4 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <DollarSign className="w-4 h-4 text-purple-600" />
-                  <span className="text-sm font-medium">Cost Efficiency</span>
+                  <span className="text-sm font-medium">Maintenance Savings</span>
                 </div>
                 <p className="text-lg font-bold text-purple-600">-12.3%</p>
                 <p className="text-xs text-muted-foreground">cost reduction</p>

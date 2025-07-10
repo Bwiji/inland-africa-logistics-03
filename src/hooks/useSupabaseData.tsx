@@ -313,6 +313,7 @@ export const useFuelRecords = () => {
 };
 
 export const useCreateFuelRecord = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (newFuelRecord: FuelRecordInsert) => {
       const { data, error } = await supabase
@@ -323,5 +324,9 @@ export const useCreateFuelRecord = () => {
       if (error) throw error;
       return data;
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["fuel_records"] });
+    },
   });
 };
+
