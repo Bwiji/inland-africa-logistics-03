@@ -17,6 +17,7 @@ import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
+import { Layout } from "@/components/Layout";
 
 const queryClient = new QueryClient();
 
@@ -52,12 +53,16 @@ const App = () => (
               } />
               <Route path="/fuel" element={
                 <ProtectedRoute>
-                  <FuelManagement />
+                  <Layout>
+                    <FuelManagement />
+                  </Layout>
                 </ProtectedRoute>
               } />
               <Route path="/compliance" element={
                 <ProtectedRoute>
-                  <ComplianceManagement />
+                  <Layout>
+                    <ComplianceManagement />
+                  </Layout>
                 </ProtectedRoute>
               } />
               <Route path="/reports" element={

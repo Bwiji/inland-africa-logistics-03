@@ -61,46 +61,6 @@ export const useUpdateTruckStatus = () => {
   });
 };
 
-export const useUpdateMaintenanceStatus = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, status, completionData }: { 
-      id: string; 
-      status: string;
-      completionData?: {
-        final_cost?: number;
-        notes?: string;
-      }
-    }) => {
-      const updateData: any = { 
-        status,
-        updated_at: new Date().toISOString()
-      };
-      
-      if (completionData) {
-        if (completionData.final_cost !== undefined) {
-          updateData.cost = completionData.final_cost;
-        }
-        if (completionData.notes) {
-          updateData.description = completionData.notes;
-        }
-      }
-
-      const { data, error } = await supabase
-        .from("maintenance")
-        .update(updateData)
-        .eq("id", id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ongoing-maintenance"] });
-      queryClient.invalidateQueries({ queryKey: ["maintenance"] });
-    },
-  });
-};
 
 export const useTruckStatistics = (truckId: string) => {
   return useQuery({
@@ -302,10 +262,16 @@ export const useCreateMaintenance = () => {
 };
 
 export const useFuelRecords = () => {
-  return useQuery<FuelRecord[], Error>({
+  return useQuery({
     queryKey: ["fuel_records"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("fuel_records").select("*");
+      const { data, error } = await supabase
+        .from("fuel_records")
+        .select(`
+          *,
+          trucks(truck_number, make, model)
+        `)
+        .order("fuel_date", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -326,6 +292,45 @@ export const useCreateFuelRecord = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["fuel_records"] });
+    },
+  });
+};
+
+export const useMaintenanceHistory = () => {
+  return useQuery({
+    queryKey: ["maintenance-history"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("maintenance")
+        .select(`
+          *,
+          trucks(truck_number, make, model)
+        `)
+        .eq("status", "completed")
+        .order("service_date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+export const useUpdateMaintenanceStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { data, error } = await supabase
+        .from("maintenance")
+        .update({ status })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["maintenance"] });
+      queryClient.invalidateQueries({ queryKey: ["ongoing-maintenance"] });
+      queryClient.invalidateQueries({ queryKey: ["maintenance-history"] });
     },
   });
 };

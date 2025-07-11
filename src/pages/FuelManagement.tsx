@@ -17,8 +17,7 @@ interface FuelRecord {
   total_cost: number;
   fuel_date: string;
   odometer_reading?: number;
-  fuel_efficiency?: number;
-  station_name?: string;
+  fuel_station?: string;
   attendant_name?: string;
   receipt_number?: string;
   trucks?: {
@@ -73,11 +72,15 @@ export default function FuelManagement() {
 
   const handleAddRecord = async () => {
     const recordData = {
-      ...newRecord,
+      truck_id: newRecord.truck_id,
       liters: parseFloat(newRecord.liters),
       total_cost: parseFloat(newRecord.total_cost),
+      cost_per_liter: parseFloat(newRecord.total_cost) / parseFloat(newRecord.liters),
       odometer_reading: newRecord.odometer_reading ? parseInt(newRecord.odometer_reading) : null,
-      fuel_date: new Date(newRecord.fuel_date).toISOString(),
+      fuel_date: new Date(newRecord.fuel_date).toISOString().split('T')[0],
+      fuel_station: newRecord.station_name,
+      attendant_name: newRecord.attendant_name,
+      receipt_number: newRecord.receipt_number,
     };
 
     createFuelRecord.mutate(recordData);
@@ -112,8 +115,11 @@ export default function FuelManagement() {
     const totalCost = thisMonth.reduce((sum, record) => sum + record.total_cost, 0);
     const totalLiters = thisMonth.reduce((sum, record) => sum + record.liters, 0);
     const avgEfficiency = thisMonth
-      .filter(record => record.fuel_efficiency)
-      .reduce((sum, record, _, arr) => sum + (record.fuel_efficiency || 0) / arr.length, 0);
+      .filter(record => record.odometer_reading)
+      .reduce((sum, record, _, arr) => {
+        const efficiency = record.odometer_reading ? record.odometer_reading / record.liters : 0;
+        return sum + efficiency / arr.length;
+      }, 0);
 
     return { totalCost, totalLiters, avgEfficiency };
   };
@@ -374,12 +380,19 @@ export default function FuelManagement() {
                     </td>
                     <td className="p-2">{record.liters}L</td>
                     <td className="p-2">KSh {record.total_cost.toLocaleString()}</td>
-                    <td className="p-2">{record.station_name || '-'}</td>
+                    <td className="p-2">{record.fuel_station || '-'}</td>
                     <td className="p-2">
-                      {record.fuel_efficiency ? `${record.fuel_efficiency} km/L` : '-'}
+                      {record.odometer_reading ? `${(record.odometer_reading / record.liters).toFixed(1)} km/L` : '-'}
                     </td>
                   </tr>
                 ))}
+                {(!fuelRecords || fuelRecords.length === 0) && (
+                  <tr>
+                    <td colSpan={6} className="p-4 text-center text-muted-foreground">
+                      No fuel records found
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
