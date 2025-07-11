@@ -48,7 +48,9 @@ const App = () => (
               } />
               <Route path="/service" element={
                 <ProtectedRoute>
-                  <ServiceManagement />
+                  <Layout>
+                    <ServiceManagement />
+                  </Layout>
                 </ProtectedRoute>
               } />
               <Route path="/fuel" element={
