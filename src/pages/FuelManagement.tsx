@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Fuel, TrendingUp, AlertTriangle, BarChart3 } from "lucide-react";
+import { Plus, Fuel, TrendingUp, AlertTriangle, BarChart3, Download, Filter, Truck } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { useTrucks, useFuelRecords, useCreateFuelRecord } from "@/hooks/useSupabaseData";
+import { useTrucks, useFuelRecords, useCreateFuelRecord, useMaintenance } from "@/hooks/useSupabaseData";
 
 interface FuelRecord {
   id: string;
@@ -48,9 +48,11 @@ const mockReserveTank = {
 
 export default function FuelManagement() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isReserveDialogOpen, setIsReserveDialogOpen] = useState(false);
+  const [selectedTruckId, setSelectedTruckId] = useState<string>("");
+  const [showMaintenanceRecords, setShowMaintenanceRecords] = useState(5);
   const { data: fuelRecords, isLoading: recordsLoading } = useFuelRecords();
   const { data: trucks } = useTrucks();
+  const { data: maintenanceRecords } = useMaintenance();
   const createFuelRecord = useCreateFuelRecord();
   const reserveTank = mockReserveTank;
 
@@ -65,10 +67,6 @@ export default function FuelManagement() {
     receipt_number: "",
   });
 
-  const [reserveUpdate, setReserveUpdate] = useState({
-    refill_amount: "",
-    cost_per_liter: "",
-  });
 
   const handleAddRecord = async () => {
     const recordData = {
@@ -97,11 +95,48 @@ export default function FuelManagement() {
     });
   };
 
-  const handleReserveRefill = async () => {
-    toast({ title: "Reserve tank refill recorded successfully" });
-    setIsReserveDialogOpen(false);
-    setReserveUpdate({ refill_amount: "", cost_per_liter: "" });
+  const downloadFuelReport = (truckId?: string) => {
+    const records = truckId 
+      ? fuelRecords?.filter(record => record.truck_id === truckId) 
+      : fuelRecords;
+    
+    if (!records?.length) {
+      toast({ title: "No fuel records to download", variant: "destructive" });
+      return;
+    }
+
+    const csvData = records.map(record => ({
+      Date: new Date(record.fuel_date).toLocaleDateString(),
+      Truck: `${record.trucks?.truck_number} - ${record.trucks?.make} ${record.trucks?.model}`,
+      Liters: record.liters,
+      'Total Cost (KSh)': record.total_cost,
+      'Cost per Liter (KSh)': (record.total_cost / record.liters).toFixed(2),
+      'Fuel Station': record.fuel_station || '',
+      'Odometer Reading': record.odometer_reading || '',
+      'Efficiency (km/L)': record.odometer_reading ? (record.odometer_reading / record.liters).toFixed(2) : '',
+      'Attendant': record.driver_id || '',
+      'Receipt Number': record.receipt_number || ''
+    }));
+
+    const csvContent = [
+      Object.keys(csvData[0]).join(','),
+      ...csvData.map(row => Object.values(row).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `fuel-report-${truckId ? trucks?.find(t => t.id === truckId)?.truck_number : 'all-trucks'}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    toast({ title: "Fuel report downloaded successfully" });
   };
+
+  const filteredFuelRecords = selectedTruckId 
+    ? fuelRecords?.filter(record => record.truck_id === selectedTruckId)
+    : fuelRecords;
 
   const calculateFuelStats = () => {
     if (!fuelRecords) return { totalCost: 0, totalLiters: 0, avgEfficiency: 0 };
@@ -285,50 +320,11 @@ export default function FuelManagement() {
         </Card>
       </div>
 
-      {/* Reserve Tank Management */}
+      {/* Reserve Tank Status */}
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Reserve Tank Status</CardTitle>
-              <CardDescription>30,000L Capacity Tank Management</CardDescription>
-            </div>
-            <Dialog open={isReserveDialogOpen} onOpenChange={setIsReserveDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline">Refill Tank</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Refill Reserve Tank</DialogTitle>
-                  <DialogDescription>Record a refill of the reserve tank</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="refill-amount">Refill Amount (Liters)</Label>
-                    <Input
-                      id="refill-amount"
-                      type="number"
-                      value={reserveUpdate.refill_amount}
-                      onChange={(e) => setReserveUpdate({...reserveUpdate, refill_amount: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="cost-per-liter">Cost per Liter (KSh)</Label>
-                    <Input
-                      id="cost-per-liter"
-                      type="number"
-                      value={reserveUpdate.cost_per_liter}
-                      onChange={(e) => setReserveUpdate({...reserveUpdate, cost_per_liter: e.target.value})}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsReserveDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleReserveRefill}>Record Refill</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <CardTitle>Reserve Tank Status</CardTitle>
+          <CardDescription>30,000L Capacity Tank Management</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -352,11 +348,34 @@ export default function FuelManagement() {
         </CardContent>
       </Card>
 
-      {/* Fuel Records Table */}
+      {/* Truck-specific Fuel Records */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Fuel Records</CardTitle>
-          <CardDescription>Track all fuel purchases and consumption</CardDescription>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <CardTitle>Fuel Records by Truck</CardTitle>
+              <CardDescription>Filter records by truck and download reports</CardDescription>
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Select value={selectedTruckId} onValueChange={setSelectedTruckId}>
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue placeholder="All Trucks" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Trucks</SelectItem>
+                  {trucks?.map((truck) => (
+                    <SelectItem key={truck.id} value={truck.id}>
+                      {truck.truck_number} - {truck.make}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={() => downloadFuelReport(selectedTruckId)} variant="outline">
+                <Download className="w-4 h-4 mr-2" />
+                Download
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -372,7 +391,7 @@ export default function FuelManagement() {
                 </tr>
               </thead>
               <tbody>
-                {fuelRecords?.slice(0, 10).map((record) => (
+                {filteredFuelRecords?.slice(0, 10).map((record) => (
                   <tr key={record.id} className="border-b hover:bg-gray-50">
                     <td className="p-2">{new Date(record.fuel_date).toLocaleDateString()}</td>
                     <td className="p-2">
@@ -386,10 +405,73 @@ export default function FuelManagement() {
                     </td>
                   </tr>
                 ))}
-                {(!fuelRecords || fuelRecords.length === 0) && (
+                {(!filteredFuelRecords || filteredFuelRecords.length === 0) && (
                   <tr>
                     <td colSpan={6} className="p-4 text-center text-muted-foreground">
                       No fuel records found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Recent Maintenance Records */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Recent Maintenance Records</CardTitle>
+              <CardDescription>Latest maintenance activities across the fleet</CardDescription>
+            </div>
+            {maintenanceRecords && maintenanceRecords.length > showMaintenanceRecords && (
+              <Button 
+                variant="outline" 
+                onClick={() => setShowMaintenanceRecords(prev => prev + 5)}
+              >
+                Load More
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">Date</th>
+                  <th className="text-left p-2">Truck</th>
+                  <th className="text-left p-2">Service Type</th>
+                  <th className="text-left p-2">Cost</th>
+                  <th className="text-left p-2">Status</th>
+                  <th className="text-left p-2">Next Service</th>
+                </tr>
+              </thead>
+              <tbody>
+                {maintenanceRecords?.slice(0, showMaintenanceRecords).map((record) => (
+                  <tr key={record.id} className="border-b hover:bg-gray-50">
+                    <td className="p-2">{new Date(record.service_date).toLocaleDateString()}</td>
+                    <td className="p-2">
+                      {record.trucks?.truck_number} - {record.trucks?.make}
+                    </td>
+                    <td className="p-2">{record.maintenance_type}</td>
+                    <td className="p-2">KSh {record.cost?.toLocaleString() || 0}</td>
+                    <td className="p-2">
+                      <Badge variant={record.status === 'completed' ? 'default' : 'secondary'}>
+                        {record.status}
+                      </Badge>
+                    </td>
+                    <td className="p-2">
+                      {record.next_service_date ? new Date(record.next_service_date).toLocaleDateString() : '-'}
+                    </td>
+                  </tr>
+                ))}
+                {(!maintenanceRecords || maintenanceRecords.length === 0) && (
+                  <tr>
+                    <td colSpan={6} className="p-4 text-center text-muted-foreground">
+                      No maintenance records found
                     </td>
                   </tr>
                 )}
