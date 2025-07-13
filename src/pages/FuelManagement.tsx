@@ -8,7 +8,7 @@ import { Plus, Fuel, TrendingUp, AlertTriangle, BarChart3, Download, Filter, Tru
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { useTrucks, useFuelRecords, useCreateFuelRecord, useMaintenance } from "@/hooks/useSupabaseData";
+import { useTrucks, useFuelRecords, useCreateFuelRecord } from "@/hooks/useSupabaseData";
 
 interface FuelRecord {
   id: string;
@@ -49,10 +49,8 @@ const mockReserveTank = {
 export default function FuelManagement() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedTruckId, setSelectedTruckId] = useState<string>("");
-  const [showMaintenanceRecords, setShowMaintenanceRecords] = useState(5);
   const { data: fuelRecords, isLoading: recordsLoading } = useFuelRecords();
   const { data: trucks } = useTrucks();
-  const { data: maintenanceRecords } = useMaintenance();
   const createFuelRecord = useCreateFuelRecord();
   const reserveTank = mockReserveTank;
 
@@ -418,68 +416,6 @@ export default function FuelManagement() {
         </CardContent>
       </Card>
 
-      {/* Recent Maintenance Records */}
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Recent Maintenance Records</CardTitle>
-              <CardDescription>Latest maintenance activities across the fleet</CardDescription>
-            </div>
-            {maintenanceRecords && maintenanceRecords.length > showMaintenanceRecords && (
-              <Button 
-                variant="outline" 
-                onClick={() => setShowMaintenanceRecords(prev => prev + 5)}
-              >
-                Load More
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2">Date</th>
-                  <th className="text-left p-2">Truck</th>
-                  <th className="text-left p-2">Service Type</th>
-                  <th className="text-left p-2">Cost</th>
-                  <th className="text-left p-2">Status</th>
-                  <th className="text-left p-2">Next Service</th>
-                </tr>
-              </thead>
-              <tbody>
-                {maintenanceRecords?.slice(0, showMaintenanceRecords).map((record) => (
-                  <tr key={record.id} className="border-b hover:bg-gray-50">
-                    <td className="p-2">{new Date(record.service_date).toLocaleDateString()}</td>
-                    <td className="p-2">
-                      {record.trucks?.truck_number} - {record.trucks?.make}
-                    </td>
-                    <td className="p-2">{record.maintenance_type}</td>
-                    <td className="p-2">KSh {record.cost?.toLocaleString() || 0}</td>
-                    <td className="p-2">
-                      <Badge variant={record.status === 'completed' ? 'default' : 'secondary'}>
-                        {record.status}
-                      </Badge>
-                    </td>
-                    <td className="p-2">
-                      {record.next_service_date ? new Date(record.next_service_date).toLocaleDateString() : '-'}
-                    </td>
-                  </tr>
-                ))}
-                {(!maintenanceRecords || maintenanceRecords.length === 0) && (
-                  <tr>
-                    <td colSpan={6} className="p-4 text-center text-muted-foreground">
-                      No maintenance records found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
