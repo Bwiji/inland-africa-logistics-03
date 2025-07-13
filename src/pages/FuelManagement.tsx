@@ -134,7 +134,7 @@ export default function FuelManagement() {
     toast({ title: "Fuel report downloaded successfully" });
   };
 
-  const filteredFuelRecords = selectedTruckId 
+  const filteredFuelRecords = selectedTruckId && selectedTruckId !== "all"
     ? fuelRecords?.filter(record => record.truck_id === selectedTruckId)
     : fuelRecords;
 
@@ -362,7 +362,7 @@ export default function FuelManagement() {
                   <SelectValue placeholder="All Trucks" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Trucks</SelectItem>
+                  <SelectItem value="all">All Trucks</SelectItem>
                   {trucks?.map((truck) => (
                     <SelectItem key={truck.id} value={truck.id}>
                       {truck.truck_number} - {truck.make}
@@ -370,7 +370,7 @@ export default function FuelManagement() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button onClick={() => downloadFuelReport(selectedTruckId)} variant="outline">
+              <Button onClick={() => downloadFuelReport(selectedTruckId === "all" ? undefined : selectedTruckId)} variant="outline">
                 <Download className="w-4 h-4 mr-2" />
                 Download
               </Button>
