@@ -18,6 +18,7 @@ const ServiceManagement = () => {
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [selectedTruck, setSelectedTruck] = useState<string>("");
+  const [displayedRecordsCount, setDisplayedRecordsCount] = useState(5);
   const { data: maintenance, isLoading, error } = useOngoingMaintenance();
   const { data: maintenanceHistory } = useMaintenanceHistory();
   const { data: trucks } = useTrucks();
@@ -180,6 +181,10 @@ const ServiceManagement = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleLoadMore = () => {
+    setDisplayedRecordsCount(prev => prev + 5);
   };
 
   const getHealthColor = (score: number) => {
@@ -434,8 +439,21 @@ const ServiceManagement = () => {
       {/* Service Records */}
       <Card className="border-2 border-blue-400/50">
         <CardHeader>
-          <CardTitle>All Service Records</CardTitle>
-          <CardDescription>Complete maintenance history and ongoing services</CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>All Service Records</CardTitle>
+              <CardDescription>Complete maintenance history and ongoing services</CardDescription>
+            </div>
+            {filteredRecords.length > displayedRecordsCount && (
+              <Button 
+                variant="outline"
+                onClick={handleLoadMore}
+                className="border-blue-400 text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              >
+                Load More
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="mb-4 space-y-4">
@@ -466,7 +484,7 @@ const ServiceManagement = () => {
           </div>
 
           <div className="space-y-4">
-            {filteredRecords.map((record) => (
+            {filteredRecords.slice(0, displayedRecordsCount).map((record) => (
               <div key={record.id} className="border-2 border-yellow-300/50 dark:border-yellow-600/50 rounded-lg p-3 sm:p-4 lg:p-6 hover:shadow-md transition-shadow">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div className="flex-1">
@@ -566,6 +584,12 @@ const ServiceManagement = () => {
             {(!allMaintenanceRecords || allMaintenanceRecords.length === 0) && (
               <div className="text-center py-8 text-muted-foreground">
                 No maintenance records found. Schedule your first service to get started.
+              </div>
+            )}
+
+            {filteredRecords.length === 0 && allMaintenanceRecords && allMaintenanceRecords.length > 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No records match your current filters.
               </div>
             )}
           </div>
