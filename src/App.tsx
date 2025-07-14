@@ -12,12 +12,14 @@ import Dashboard from "./pages/Dashboard";
 import FleetManagement from "./pages/FleetManagement";
 import ServiceManagement from "./pages/ServiceManagement";
 import FuelManagement from "./pages/FuelManagement";
+import FuelAttendantPortal from "./pages/FuelAttendantPortal";
 import ComplianceManagement from "./pages/ComplianceManagement";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import { Layout } from "@/components/Layout";
+import { FuelAttendantRoute } from "@/components/FuelAttendantRoute";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +61,11 @@ const App = () => (
                     <FuelManagement />
                   </Layout>
                 </ProtectedRoute>
+              } />
+              <Route path="/fuel-attendant" element={
+                <FuelAttendantRoute>
+                  <FuelAttendantPortal />
+                </FuelAttendantRoute>
               } />
               <Route path="/compliance" element={
                 <ProtectedRoute>

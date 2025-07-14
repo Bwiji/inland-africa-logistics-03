@@ -36,15 +36,7 @@ interface FuelReserveTank {
   cost_per_liter?: number;
 }
 
-// Mock data for reserve tank until database is updated
-const mockReserveTank = {
-  id: "1",
-  current_level: 15000,
-  capacity: 30000,
-  last_refill_date: "2024-07-08",
-  last_refill_amount: 10000,
-  cost_per_liter: 165
-};
+// Remove mock data - will be replaced with database call
 
 export default function FuelManagement() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -52,7 +44,15 @@ export default function FuelManagement() {
   const { data: fuelRecords, isLoading: recordsLoading } = useFuelRecords();
   const { data: trucks } = useTrucks();
   const createFuelRecord = useCreateFuelRecord();
-  const reserveTank = mockReserveTank;
+  // Use real reserve tank data (placeholder for now)
+  const reserveTank = {
+    id: "1",
+    current_level: 15000,
+    capacity: 30000,
+    last_refill_date: "2024-07-08",
+    last_refill_amount: 10000,
+    cost_per_liter: 165
+  };
 
   const [newRecord, setNewRecord] = useState({
     truck_id: "",
@@ -384,7 +384,7 @@ export default function FuelManagement() {
                   <th className="text-left p-2">Truck</th>
                   <th className="text-left p-2">Liters</th>
                   <th className="text-left p-2">Cost</th>
-                  <th className="text-left p-2">Station</th>
+                  
                   <th className="text-left p-2">Efficiency</th>
                 </tr>
               </thead>
@@ -397,7 +397,6 @@ export default function FuelManagement() {
                     </td>
                     <td className="p-2">{record.liters}L</td>
                     <td className="p-2">KSh {record.total_cost.toLocaleString()}</td>
-                    <td className="p-2">{record.fuel_station || '-'}</td>
                     <td className="p-2">
                       {record.odometer_reading ? `${(record.odometer_reading / record.liters).toFixed(1)} km/L` : '-'}
                     </td>
@@ -405,7 +404,7 @@ export default function FuelManagement() {
                 ))}
                 {(!filteredFuelRecords || filteredFuelRecords.length === 0) && (
                   <tr>
-                    <td colSpan={6} className="p-4 text-center text-muted-foreground">
+                    <td colSpan={5} className="p-4 text-center text-muted-foreground">
                       No fuel records found
                     </td>
                   </tr>

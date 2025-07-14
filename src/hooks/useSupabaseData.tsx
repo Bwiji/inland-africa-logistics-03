@@ -296,6 +296,54 @@ export const useCreateFuelRecord = () => {
   });
 };
 
+// Temporary manual tank management - will be replaced when DB migration is applied
+interface ReserveTankData {
+  id: string;
+  current_level: number;
+  capacity: number;
+  last_refill_date?: string;
+  last_refill_amount?: number;
+  cost_per_liter?: number;
+}
+
+interface TankRefillData {
+  tank_id: string;
+  refill_amount: number;
+  cost_per_liter: number;
+  total_cost: number;
+  refill_date: string;
+}
+
+export const useReserveTank = () => {
+  return useQuery<ReserveTankData>({
+    queryKey: ["reserve_tank"],
+    queryFn: async () => {
+      // TODO: Replace with actual database query once migration is applied
+      return {
+        id: "1",
+        current_level: 15000,
+        capacity: 30000,
+        last_refill_date: "2024-07-08",
+        last_refill_amount: 10000,
+        cost_per_liter: 165
+      };
+    },
+  });
+};
+
+export const useCreateTankRefill = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (refillData: TankRefillData) => {
+      // TODO: Replace with actual database insert once migration is applied
+      return { id: "temp", ...refillData };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reserve_tank"] });
+    },
+  });
+};
+
 export const useMaintenanceHistory = () => {
   return useQuery({
     queryKey: ["maintenance-history"],
