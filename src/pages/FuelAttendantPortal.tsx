@@ -4,10 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Fuel, AlertTriangle, TrendingUp, RefreshCw } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Plus, Fuel, AlertTriangle, TrendingUp, RefreshCw, User, LogOut, Settings, ChevronDown } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { useTrucks, useFuelRecords, useCreateFuelRecord, useReserveTank, useCreateTankRefill } from "@/hooks/useSupabaseData";
 
 interface FuelRecord {
@@ -38,9 +42,12 @@ interface ReserveTank {
 export default function FuelAttendantPortal() {
   const [isAddRecordOpen, setIsAddRecordOpen] = useState(false);
   const [isRefillTankOpen, setIsRefillTankOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { data: fuelRecords, isLoading: recordsLoading } = useFuelRecords();
   const { data: trucks } = useTrucks();
   const { data: reserveTankData } = useReserveTank();
+  const { user, signOut } = useAuth();
+  const { profile } = useProfile();
   const createFuelRecord = useCreateFuelRecord();
   const createTankRefill = useCreateTankRefill();
 
@@ -149,6 +156,23 @@ export default function FuelAttendantPortal() {
     });
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Signed Out",
+      description: "You have been successfully signed out."
+    });
+  };
+
+  const getUserDisplayName = () => {
+    return profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Fuel Attendant';
+  };
+
+  const getUserInitials = () => {
+    const name = getUserDisplayName();
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
+
   // Calculate today's records
   const todayRecords = fuelRecords?.filter(record => {
     const recordDate = new Date(record.fuel_date).toDateString();
@@ -163,21 +187,57 @@ export default function FuelAttendantPortal() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Fuel Attendant Portal</h1>
-          <p className="text-muted-foreground">Daily fuel records and tank management</p>
-        </div>
-        <div className="flex gap-2">
-          <Dialog open={isRefillTankOpen} onOpenChange={setIsRefillTankOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                <RefreshCw className="w-4 h-4" />
-                Refill Tank
-              </Button>
-            </DialogTrigger>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
+      <div className="container mx-auto p-6 space-y-6">
+        {/* Header with Profile */}
+        <div className="flex justify-between items-center bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-orange-100">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+              Fuel Attendant Portal
+            </h1>
+            <p className="text-muted-foreground mt-1">Daily fuel records and tank management</p>
+          </div>
+          <div className="flex items-center gap-4">
+            {/* Profile Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-3 px-4 py-2 hover:bg-orange-50 border-orange-200">
+                  <Avatar className="w-8 h-8">
+                    <AvatarFallback className="bg-gradient-to-r from-orange-400 to-amber-500 text-white text-sm font-semibold">
+                      {getUserInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="text-left">
+                    <p className="text-sm font-medium">{getUserDisplayName()}</p>
+                    <p className="text-xs text-muted-foreground">Fuel Attendant</p>
+                  </div>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => setIsProfileOpen(true)}>
+                  <User className="w-4 h-4 mr-2" />
+                  View Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {/* Action Buttons */}
+            <Dialog open={isRefillTankOpen} onOpenChange={setIsRefillTankOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2 hover:bg-orange-50 border-orange-200">
+                  <RefreshCw className="w-4 h-4" />
+                  Refill Tank
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Refill Reserve Tank</DialogTitle>
@@ -232,13 +292,13 @@ export default function FuelAttendantPortal() {
             </DialogContent>
           </Dialog>
 
-          <Dialog open={isAddRecordOpen} onOpenChange={setIsAddRecordOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Add Daily Record
-              </Button>
-            </DialogTrigger>
+            <Dialog open={isAddRecordOpen} onOpenChange={setIsAddRecordOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
+                  <Plus className="w-4 h-4" />
+                  Add Daily Record
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Add Daily Fuel Record</DialogTitle>
@@ -317,55 +377,128 @@ export default function FuelAttendantPortal() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
-      </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Today's Records</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{todayRecords.length}</div>
-            <p className="text-xs text-muted-foreground">Fuel dispensing records</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Today's Fuel Dispensed</CardTitle>
-            <Fuel className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {todayRecords.reduce((sum, record) => sum + record.liters, 0).toFixed(0)}L
+        {/* Profile Modal */}
+        <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <User className="w-5 h-5" />
+                Profile Information
+              </DialogTitle>
+              <DialogDescription>Your account details and information</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-4">
+                <Avatar className="w-16 h-16">
+                  <AvatarFallback className="bg-gradient-to-r from-orange-400 to-amber-500 text-white text-lg font-bold">
+                    {getUserInitials()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="font-semibold text-lg">{getUserDisplayName()}</h3>
+                  <p className="text-sm text-muted-foreground">{user?.email}</p>
+                  <Badge className="mt-1 bg-orange-100 text-orange-700 hover:bg-orange-200">
+                    Fuel Attendant
+                  </Badge>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Employee ID</Label>
+                  <p className="text-sm">{profile?.employee_id || user?.user_metadata?.employee_id || 'Not Set'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Department</Label>
+                  <p className="text-sm">{profile?.department || user?.user_metadata?.department || 'Fuel Management'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Phone</Label>
+                  <p className="text-sm">{profile?.phone || 'Not Set'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Location</Label>
+                  <p className="text-sm">{profile?.location || 'Main Facility'}</p>
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">Total liters dispensed</p>
-          </CardContent>
-        </Card>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsProfileOpen(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Reserve Tank</CardTitle>
-            <AlertTriangle className={`h-4 w-4 ${reservePercentage < 25 ? 'text-red-500' : 'text-muted-foreground'}`} />
+        {/* Quick Stats with Enhanced Design */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-cyan-50 hover:shadow-xl transition-all duration-300">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-blue-700">Today's Records</CardTitle>
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <TrendingUp className="h-4 w-4 text-blue-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-blue-800">{todayRecords.length}</div>
+              <p className="text-xs text-blue-600 mt-1">Fuel dispensing records</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-emerald-50 hover:shadow-xl transition-all duration-300">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-green-700">Today's Fuel Dispensed</CardTitle>
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Fuel className="h-4 w-4 text-green-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-800">
+                {todayRecords.reduce((sum, record) => sum + record.liters, 0).toFixed(0)}L
+              </div>
+              <p className="text-xs text-green-600 mt-1">Total liters dispensed</p>
+            </CardContent>
+          </Card>
+
+          <Card className={`border-0 shadow-lg hover:shadow-xl transition-all duration-300 ${
+            reservePercentage < 25 
+              ? 'bg-gradient-to-br from-red-50 to-rose-50' 
+              : 'bg-gradient-to-br from-orange-50 to-amber-50'
+          }`}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className={`text-sm font-medium ${
+                reservePercentage < 25 ? 'text-red-700' : 'text-orange-700'
+              }`}>Reserve Tank</CardTitle>
+              <div className={`p-2 rounded-lg ${
+                reservePercentage < 25 ? 'bg-red-100' : 'bg-orange-100'
+              }`}>
+                <AlertTriangle className={`h-4 w-4 ${
+                  reservePercentage < 25 ? 'text-red-600' : 'text-orange-600'
+                }`} />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-3xl font-bold ${
+                reservePercentage < 25 ? 'text-red-800' : 'text-orange-800'
+              }`}>{reservePercentage.toFixed(1)}%</div>
+              <p className={`text-xs mt-1 ${
+                reservePercentage < 25 ? 'text-red-600' : 'text-orange-600'
+              }`}>
+                {reserveTank.current_level.toLocaleString()}L / {reserveTank.capacity.toLocaleString()}L
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Reserve Tank Status with Enhanced Design */}
+        <Card className="border-0 shadow-lg bg-gradient-to-r from-white to-orange-50/50 hover:shadow-xl transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-800">
+              <Fuel className="w-5 h-5" />
+              Reserve Tank Status
+            </CardTitle>
+            <CardDescription>Current fuel reserve levels and refill history</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{reservePercentage.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">
-              {reserveTank.current_level.toLocaleString()}L / {reserveTank.capacity.toLocaleString()}L
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Reserve Tank Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Reserve Tank Status</CardTitle>
-          <CardDescription>Current fuel reserve levels and refill history</CardDescription>
-        </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="w-full bg-gray-200 rounded-full h-6">
@@ -399,12 +532,15 @@ export default function FuelAttendantPortal() {
         </CardContent>
       </Card>
 
-      {/* Today's Records */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Today's Fuel Records</CardTitle>
-          <CardDescription>All fuel dispensing records for today</CardDescription>
-        </CardHeader>
+        {/* Today's Records with Enhanced Design */}
+        <Card className="border-0 shadow-lg bg-gradient-to-r from-white to-blue-50/30 hover:shadow-xl transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-800">
+              <TrendingUp className="w-5 h-5" />
+              Today's Fuel Records
+            </CardTitle>
+            <CardDescription>All fuel dispensing records for today</CardDescription>
+          </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
@@ -440,7 +576,8 @@ export default function FuelAttendantPortal() {
             </table>
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }
