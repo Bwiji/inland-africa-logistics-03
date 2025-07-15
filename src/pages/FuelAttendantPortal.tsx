@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,11 +43,13 @@ export default function FuelAttendantPortal() {
   const [isAddRecordOpen, setIsAddRecordOpen] = useState(false);
   const [isRefillTankOpen, setIsRefillTankOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const { data: fuelRecords, isLoading: recordsLoading } = useFuelRecords();
   const { data: trucks } = useTrucks();
   const { data: reserveTankData } = useReserveTank();
   const { user, signOut } = useAuth();
-  const { profile } = useProfile();
+  const { profile, updateProfile } = useProfile();
   const createFuelRecord = useCreateFuelRecord();
   const createTankRefill = useCreateTankRefill();
 
@@ -75,6 +77,14 @@ export default function FuelAttendantPortal() {
     price_per_liter: "",
     total_cost: "",
     refill_date: new Date().toISOString().split('T')[0],
+  });
+
+  const [profileData, setProfileData] = useState({
+    full_name: "",
+    phone: "",
+    location: "",
+    address: "",
+    emergency_contact: "",
   });
 
   const handleAddRecord = async () => {
@@ -164,6 +174,50 @@ export default function FuelAttendantPortal() {
     });
   };
 
+  const handleSaveProfile = async () => {
+    try {
+      const success = await updateProfile(profileData);
+      if (success) {
+        setIsEditingProfile(false);
+        toast({
+          title: "Profile Updated",
+          description: "Your profile has been successfully updated."
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCancelProfileEdit = () => {
+    // Reset to original data
+    setProfileData({
+      full_name: profile?.full_name || user?.user_metadata?.full_name || '',
+      phone: profile?.phone || '',
+      location: profile?.location || '',
+      address: profile?.address || '',
+      emergency_contact: profile?.emergency_contact || '',
+    });
+    setIsEditingProfile(false);
+  };
+
+  // Load profile data when available
+  useEffect(() => {
+    if (profile || user) {
+      setProfileData({
+        full_name: profile?.full_name || user?.user_metadata?.full_name || '',
+        phone: profile?.phone || '',
+        location: profile?.location || '',
+        address: profile?.address || '',
+        emergency_contact: profile?.emergency_contact || '',
+      });
+    }
+  }, [profile, user]);
+
   const getUserDisplayName = () => {
     return profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Fuel Attendant';
   };
@@ -219,7 +273,7 @@ export default function FuelAttendantPortal() {
                   <User className="w-4 h-4 mr-2" />
                   View Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsSettingsOpen(true)}>
                   <Settings className="w-4 h-4 mr-2" />
                   Settings
                 </DropdownMenuItem>
@@ -380,17 +434,19 @@ export default function FuelAttendantPortal() {
           </div>
         </div>
 
-        {/* Profile Modal */}
+        {/* Enhanced Profile Modal */}
         <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <User className="w-5 h-5" />
                 Profile Information
               </DialogTitle>
-              <DialogDescription>Your account details and information</DialogDescription>
+              <DialogDescription>
+                {isEditingProfile ? "Edit your profile information" : "Your account details and information"}
+              </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="flex items-center space-x-4">
                 <Avatar className="w-16 h-16">
                   <AvatarFallback className="bg-gradient-to-r from-orange-400 to-amber-500 text-white text-lg font-bold">
@@ -405,27 +461,170 @@ export default function FuelAttendantPortal() {
                   </Badge>
                 </div>
               </div>
+
+              {isEditingProfile ? (
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <Label htmlFor="full_name">Full Name</Label>
+                    <Input
+                      id="full_name"
+                      value={profileData.full_name}
+                      onChange={(e) => setProfileData({...profileData, full_name: e.target.value})}
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      value={profileData.phone}
+                      onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      value={profileData.location}
+                      onChange={(e) => setProfileData({...profileData, location: e.target.value})}
+                      placeholder="Enter your location"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="address">Address</Label>
+                    <Input
+                      id="address"
+                      value={profileData.address}
+                      onChange={(e) => setProfileData({...profileData, address: e.target.value})}
+                      placeholder="Enter your address"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="emergency_contact">Emergency Contact</Label>
+                    <Input
+                      id="emergency_contact"
+                      value={profileData.emergency_contact}
+                      onChange={(e) => setProfileData({...profileData, emergency_contact: e.target.value})}
+                      placeholder="Enter emergency contact"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Employee ID</Label>
+                    <p className="text-sm">{profile?.employee_id || user?.user_metadata?.employee_id || 'Not Set'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Department</Label>
+                    <p className="text-sm">{profile?.department || user?.user_metadata?.department || 'Fuel Management'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Phone</Label>
+                    <p className="text-sm">{profile?.phone || 'Not Set'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Location</Label>
+                    <p className="text-sm">{profile?.location || 'Not Set'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Address</Label>
+                    <p className="text-sm">{profile?.address || 'Not Set'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Emergency Contact</Label>
+                    <p className="text-sm">{profile?.emergency_contact || 'Not Set'}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              {isEditingProfile ? (
+                <>
+                  <Button variant="outline" onClick={handleCancelProfileEdit}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveProfile} className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
+                    Save Changes
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={() => setIsProfileOpen(false)}>
+                    Close
+                  </Button>
+                  <Button onClick={() => setIsEditingProfile(true)} className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
+                    Edit Profile
+                  </Button>
+                </>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Settings Modal */}
+        <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Settings className="w-5 h-5" />
+                Settings
+              </DialogTitle>
+              <DialogDescription>Configure your preferences and settings</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
               <div className="space-y-3">
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Employee ID</Label>
-                  <p className="text-sm">{profile?.employee_id || user?.user_metadata?.employee_id || 'Not Set'}</p>
+                <h4 className="text-sm font-medium">Notification Preferences</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Email Notifications</span>
+                    <input type="checkbox" defaultChecked className="rounded" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">SMS Notifications</span>
+                    <input type="checkbox" className="rounded" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Desktop Notifications</span>
+                    <input type="checkbox" defaultChecked className="rounded" />
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Department</Label>
-                  <p className="text-sm">{profile?.department || user?.user_metadata?.department || 'Fuel Management'}</p>
+              </div>
+              
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium">Display Settings</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Dark Mode</span>
+                    <input type="checkbox" className="rounded" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Compact View</span>
+                    <input type="checkbox" className="rounded" />
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Phone</Label>
-                  <p className="text-sm">{profile?.phone || 'Not Set'}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Location</Label>
-                  <p className="text-sm">{profile?.location || 'Main Facility'}</p>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium">Security</h4>
+                <div className="space-y-2">
+                  <Button variant="outline" size="sm" className="w-full justify-start">
+                    Change Password
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full justify-start">
+                    Two-Factor Authentication
+                  </Button>
                 </div>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsProfileOpen(false)}>Close</Button>
+              <Button variant="outline" onClick={() => setIsSettingsOpen(false)}>
+                Close
+              </Button>
+              <Button className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
+                Save Settings
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
