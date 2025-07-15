@@ -31,5 +31,11 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <Navigate to="/auth" replace />;
   }
 
+  // Check if user is fuel attendant and redirect to fuel portal
+  const userRole = user.user_metadata?.role;
+  if (userRole === 'fuel_attendant') {
+    return <Navigate to="/fuel-attendant" replace />;
+  }
+
   return <>{children}</>;
 };

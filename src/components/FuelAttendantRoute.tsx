@@ -33,9 +33,7 @@ export const FuelAttendantRoute = ({ children }: FuelAttendantRouteProps) => {
 
   // Check if user has fuel attendant role from their metadata
   const userRole = user.user_metadata?.role;
-  const isFuelAttendant = userRole === 'fuel_attendant' || 
-                         user.email?.includes('attendant') || 
-                         user.email === 'fuelattendant@company.com'; // Fallback for existing users
+  const isFuelAttendant = userRole === 'fuel_attendant';
 
   if (!isFuelAttendant) {
     return (

@@ -29,23 +29,29 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useProfile } from "@/hooks/useProfile";
+import { useAuth } from "@/hooks/useAuth";
 
 const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+  const { profile, loading, updateProfile } = useProfile();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
   const [profileData, setProfileData] = useState({
-    fullName: 'John Adebayo',
-    email: 'john.adebayo@translogistics.co.ke',
-    phone: '+254 712 345 678',
-    role: 'Fleet Manager',
-    department: 'Operations',
-    employeeId: 'TL-2024-001',
-    joinDate: '2024-01-15',
-    location: 'Nairobi, Kenya',
-    bio: 'Experienced fleet manager with 8+ years in logistics and transportation management. Specialized in route optimization and driver performance management.',
-    address: 'Westlands, Nairobi',
-    emergencyContact: '+254 722 987 654',
-    licenseNumber: 'DL-123456789',
+    fullName: '',
+    email: '',
+    phone: '',
+    role: '',
+    department: '',
+    employeeId: '',
+    joinDate: '',
+    location: '',
+    bio: '',
+    address: '',
+    emergencyContact: '',
+    licenseNumber: '',
     notifications: {
       email: true,
       sms: false,
@@ -55,27 +61,52 @@ const Profile = () => {
   
   const [originalData, setOriginalData] = useState(profileData);
 
-  const { toast } = useToast();
-
-  // Load saved profile data on component mount
+  // Load profile data when available
   useEffect(() => {
-    const savedProfile = localStorage.getItem('userProfile');
-    if (savedProfile) {
-      const parsedProfile = JSON.parse(savedProfile);
-      setProfileData(parsedProfile);
-      setOriginalData(parsedProfile);
+    if (profile && user) {
+      const formattedData = {
+        fullName: profile.full_name || user.user_metadata?.full_name || '',
+        email: user.email || '',
+        phone: profile.phone || '',
+        role: profile.role || user.user_metadata?.role || '',
+        department: profile.department || user.user_metadata?.department || '',
+        employeeId: profile.employee_id || user.user_metadata?.employee_id || '',
+        joinDate: profile.join_date || new Date().toISOString().split('T')[0],
+        location: profile.location || '',
+        bio: '',
+        address: profile.address || '',
+        emergencyContact: profile.emergency_contact || '',
+        licenseNumber: profile.license_number || '',
+        notifications: {
+          email: profile.email_notifications ?? true,
+          sms: profile.sms_notifications ?? false,
+          push: profile.push_notifications ?? true
+        }
+      };
+      setProfileData(formattedData);
+      setOriginalData(formattedData);
     }
-  }, []);
+  }, [profile, user]);
 
-  const handleSave = () => {
-    // Save to localStorage
-    localStorage.setItem('userProfile', JSON.stringify(profileData));
-    setIsEditing(false);
-    setOriginalData(profileData);
-    toast({
-      title: "Profile Updated",
-      description: "Your profile information has been successfully saved.",
-    });
+  const handleSave = async () => {
+    const updates = {
+      full_name: profileData.fullName,
+      phone: profileData.phone,
+      department: profileData.department,
+      location: profileData.location,
+      address: profileData.address,
+      emergency_contact: profileData.emergencyContact,
+      license_number: profileData.licenseNumber,
+      email_notifications: profileData.notifications.email,
+      sms_notifications: profileData.notifications.sms,
+      push_notifications: profileData.notifications.push,
+    };
+
+    const success = await updateProfile(updates);
+    if (success) {
+      setIsEditing(false);
+      setOriginalData(profileData);
+    }
   };
 
   const handleCancel = () => {
@@ -273,21 +304,12 @@ const Profile = () => {
                       </div>
                       <div>
                         <Label htmlFor="role" className="text-sm">Role</Label>
-                        <Select 
-                          value={profileData.role} 
-                          onValueChange={(value) => handleInputChange('role', value)} 
-                          disabled={!isEditing}
-                        >
-                          <SelectTrigger className="text-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Fleet Manager">Fleet Manager</SelectItem>
-                            <SelectItem value="Driver">Driver</SelectItem>
-                            <SelectItem value="Supervisor">Supervisor</SelectItem>
-                            <SelectItem value="Admin">Admin</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Input
+                          id="role"
+                          value={profileData.role}
+                          disabled
+                          className="bg-muted text-sm"
+                        />
                       </div>
                       <div>
                         <Label htmlFor="department" className="text-sm">Department</Label>
