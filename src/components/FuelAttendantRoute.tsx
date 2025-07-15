@@ -1,3 +1,4 @@
+
 import { ReactNode } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
@@ -30,12 +31,11 @@ export const FuelAttendantRoute = ({ children }: FuelAttendantRouteProps) => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Check if user has fuel attendant credentials
-  // For now, we'll check if the email contains "attendant" or has a specific role
-  // In production, this would check against a proper role system
-  const isFuelAttendant = user.email?.includes('attendant') || 
-                         user.user_metadata?.role === 'fuel_attendant' ||
-                         user.email === 'fuelattendant@company.com'; // Example attendant email
+  // Check if user has fuel attendant role from their metadata
+  const userRole = user.user_metadata?.role;
+  const isFuelAttendant = userRole === 'fuel_attendant' || 
+                         user.email?.includes('attendant') || 
+                         user.email === 'fuelattendant@company.com'; // Fallback for existing users
 
   if (!isFuelAttendant) {
     return (
